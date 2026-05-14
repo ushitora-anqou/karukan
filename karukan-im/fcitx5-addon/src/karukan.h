@@ -5,11 +5,6 @@
 #ifndef FCITX5_KARUKAN_KARUKAN_H
 #define FCITX5_KARUKAN_KARUKAN_H
 
-#include <atomic>
-#include <thread>
-#include <vector>
-
-#include <fcitx-utils/eventdispatcher.h>
 #include <fcitx/addonfactory.h>
 #include <fcitx/addonmanager.h>
 #include <fcitx/candidatelist.h>
@@ -64,30 +59,10 @@ private:
     KarukanEngine* engine_;
     InputContext* ic_;
     ::KarukanEngine* rustEngine_{nullptr};
+    bool engineInitialized_{false};
     /// Guard: true while inside keyEvent() to prevent re-entrant reset()
     /// from losing engine state that the key handler is managing.
     bool handlingKeyEvent_{false};
-
-    // Async model loading: see keyEvent() in karukan.cpp.
-    // initInProgress_ is set when the background thread starts and cleared
-    // after the main thread joins it. initCompleted_ is set by the background
-    // thread on completion. Both are atomic to permit lock-free polling from
-    // the main thread.
-    std::atomic<bool> initInProgress_{false};
-    std::atomic<bool> initCompleted_{false};
-    std::atomic<int> initResult_{0};
-    std::thread initThread_;
-
-    // Keys typed during async init are queued here and replayed through the
-    // engine once init completes, so the user's input isn't lost. Touched
-    // only on the main thread (keyEvent + dispatcher callback) so no mutex
-    // is needed.
-    struct QueuedKey {
-        uint32_t keysym;
-        uint32_t state;
-        int isRelease;
-    };
-    std::vector<QueuedKey> pendingKeys_;
 };
 
 // Main engine class
@@ -107,14 +82,9 @@ public:
 
     auto& factory() { return factory_; }
 
-    EventDispatcher* eventDispatcher() { return &eventDispatcher_; }
-
 private:
     Instance* instance_;
     FactoryFor<KarukanState> factory_;
-    // Used by KarukanState init threads to post UI updates back to the
-    // fcitx5 main thread when async model loading completes.
-    EventDispatcher eventDispatcher_;
 };
 
 class KarukanEngineFactory : public AddonFactory {
