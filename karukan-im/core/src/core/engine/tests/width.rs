@@ -284,14 +284,17 @@ fn alphabet_input_always_takes_an_ascii_space() {
 }
 
 #[test]
-fn shift_space_alone_is_always_the_full_width_one() {
-    for space in [SpaceStyle::Half, SpaceStyle::Full] {
+fn shift_space_alone_takes_the_other_width() {
+    // The setting picks which chord means which width; Shift+Space is the
+    // other one — half under the shipped `full`, full under an explicit
+    // `half`.
+    for (space, expected) in [(SpaceStyle::Half, "\u{3000}"), (SpaceStyle::Full, " ")] {
         let mut engine = InputMethodEngine::with_config(EngineConfig {
             space,
             ..EngineConfig::default()
         });
         let result = engine.process_key(&press_shift_key(Keysym::SPACE));
-        assert_eq!(committed(&result).as_deref(), Some("\u{3000}"));
+        assert_eq!(committed(&result).as_deref(), Some(expected));
     }
 }
 
