@@ -321,10 +321,14 @@ fn test_alphabet_mode_pure_latin_preserves_live_text() {
 // --- Shift+Space space insertion tests ---
 
 #[test]
-fn test_shift_space_alone_commits_a_fullwidth_space() {
-    // The exception to the setting, committed directly rather than opening
-    // a composition a second Space would convert.
-    for mut engine in [InputMethodEngine::new(), fullwidth_space_engine()] {
+fn test_shift_space_alone_commits_the_other_width() {
+    // The setting picks which chord means which width; Shift+Space is the
+    // other one, committed directly rather than opening a composition a
+    // second Space would convert.
+    for (mut engine, expected) in [
+        (InputMethodEngine::new(), " "),
+        (halfwidth_space_engine(), "\u{3000}"),
+    ] {
         let result = engine.process_key(&press_shift_key(Keysym::SPACE));
         assert!(result.consumed);
         assert!(matches!(engine.state(), InputState::Empty));
@@ -332,18 +336,18 @@ fn test_shift_space_alone_commits_a_fullwidth_space() {
             EngineAction::Commit(text) => Some(text.clone()),
             _ => None,
         });
-        assert_eq!(commit.as_deref(), Some("\u{3000}"));
+        assert_eq!(commit.as_deref(), Some(expected));
     }
 }
 
 #[test]
-fn test_shift_space_inserts_the_configured_space_into_a_composition() {
+fn test_shift_space_inserts_the_other_width_into_a_composition() {
     // Bare Space converts here, so this chord is the only way to put a
-    // space into a composition — and it takes the everyday width, so a
-    // half-width space can be part of what gets converted.
+    // space into a composition — the same other-width chord it commits
+    // from Empty, so both chords mean the same widths in both states.
     for (mut engine, expected) in [
         (InputMethodEngine::new(), "あ "),
-        (fullwidth_space_engine(), "あ\u{3000}"),
+        (halfwidth_space_engine(), "あ\u{3000}"),
     ] {
         engine.process_key(&press('a'));
         engine.process_key(&press_shift_key(Keysym::SPACE));

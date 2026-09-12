@@ -111,12 +111,13 @@ impl InputMethodEngine {
 
     /// Process key in empty state
     pub(super) fn process_key_empty(&mut self, key: &KeyEvent, shift_active: bool) -> EngineResult {
-        // Shift+Space on its own is the "I want a full-width space" gesture,
-        // whatever the setting says. Committed directly, so no composition
-        // opens for a second Space to convert.
+        // Shift+Space on its own is the "I want the other space" gesture: the
+        // setting picks which chord means which width, so the shifted one is
+        // the opposite of what bare Space types. Committed directly, so no
+        // composition opens for a second Space to convert.
         if shift_active && key.keysym == Keysym::SPACE && !key.modifiers.control_key {
             return EngineResult::consumed()
-                .with_action(EngineAction::Commit("\u{3000}".to_string()));
+                .with_action(EngineAction::Commit(self.shifted_space_char().to_string()));
         }
 
         // Bare Space from Empty: a full-width space is committed directly —
@@ -207,12 +208,23 @@ impl InputMethodEngine {
         }
     }
 
-    /// Insert the configured space after the active elements. Bare Space
+    /// The space Shift+Space inputs: the other one. The setting picks which
+    /// chord means which width, so the shifted chord is the escape hatch —
+    /// and it means the same width in both states.
+    pub(super) fn shifted_space_char(&self) -> char {
+        if self.space_char() == '\u{3000}' {
+            ' '
+        } else {
+            '\u{3000}'
+        }
+    }
+
+    /// Insert the other space after the active elements. Bare Space
     /// converts mid-composition, so Shift+Space is the only way to put a
-    /// space into a composition — and the width wanted there is the
-    /// everyday one, not the exception Shift+Space commits from Empty.
+    /// space into a composition — the same other-width chord it commits
+    /// from Empty.
     pub(super) fn input_space(&mut self) -> EngineResult {
-        let space = self.space_char();
+        let space = self.shifted_space_char();
         self.edit_with_chunk_breaks(|e| e.input_buf.push_direct(space));
         self.refresh_input_state()
     }
@@ -266,7 +278,7 @@ impl InputMethodEngine {
             Keysym::ESCAPE => self.cancel_composing(),
             Keysym::BACKSPACE => self.backspace_composing(),
             Keysym::DELETE => self.delete_composing(),
-            // Shift+Space: a space, since bare Space converts here.
+            // Shift+Space: the other space, since bare Space converts here.
             Keysym::SPACE if shift_active => self.input_space(),
             Keysym::SPACE if self.mode.current() == InputMode::Alphabet => {
                 let space = self.space_char();

@@ -59,11 +59,11 @@ fn test_engine_backspace() {
 }
 
 #[test]
-fn space_in_empty_passes_through_by_default() {
-    // The default space is the ASCII one, which the application inserts
-    // itself — leaving Space to do whatever it does there (scrolling a
-    // page) while the IME has nothing to compose.
-    let mut engine = InputMethodEngine::new();
+fn space_in_empty_passes_through_when_configured_half() {
+    // With `space = "half"` the space is the ASCII one, which the
+    // application inserts itself — leaving Space to do whatever it does
+    // there (scrolling a page) while the IME has nothing to compose.
+    let mut engine = halfwidth_space_engine();
 
     let result = engine.process_key(&press_key(Keysym::SPACE));
     assert!(!result.consumed);
@@ -73,11 +73,11 @@ fn space_in_empty_passes_through_by_default() {
 
 #[test]
 fn space_in_empty_hiragana_commits_fullwidth_space() {
-    // A full-width space is committed directly from Empty without entering
-    // Composing — the Japanese-IME convention, but without the side effect
-    // of "second Space starts Conversion mode" that a Composing-state
-    // insertion would cause.
-    let mut engine = fullwidth_space_engine();
+    // The shipped space is the full-width one, committed directly from
+    // Empty without entering Composing — the Japanese-IME convention, but
+    // without the side effect of "second Space starts Conversion mode"
+    // that a Composing-state insertion would cause.
+    let mut engine = InputMethodEngine::new();
     assert_eq!(engine.mode.current(), InputMode::Hiragana);
 
     let result = engine.process_key(&press_key(Keysym::SPACE));

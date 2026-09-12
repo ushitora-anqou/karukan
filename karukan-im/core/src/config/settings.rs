@@ -34,16 +34,16 @@ pub struct Settings {
     pub date: DateConfig,
 }
 
-/// The space the Space key inputs while typing kana. Alphabet and emoji
-/// input always take the ASCII one, like the width rules leave direct input
-/// alone.
+/// The space the Space key inputs while typing kana; Shift+Space inputs the
+/// other one. Alphabet and emoji input always take the ASCII one, like the
+/// width rules leave direct input alone.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SpaceStyle {
     /// The ASCII space.
-    #[default]
     Half,
     /// The ideographic space `　`.
+    #[default]
     Full,
 }
 
@@ -297,12 +297,13 @@ mod tests {
     #[test]
     fn test_default_symbol_and_width_settings() {
         // Shipped defaults: the Japanese symbols, and kana input that comes
-        // out full-width apart from digits.
+        // out full-width apart from digits (spaces included — Shift+Space
+        // is the half-width one).
         let settings = Settings::default();
         assert_eq!(settings.symbol.punctuation, PunctuationStyle::KutenTouten);
         assert_eq!(settings.symbol.bracket, BracketStyle::Corner);
         assert_eq!(settings.symbol.slash, SlashStyle::MiddleDot);
-        assert_eq!(settings.symbol.space, SpaceStyle::Half);
+        assert_eq!(settings.symbol.space, SpaceStyle::Full);
         assert_eq!(settings.width.kana_symbol, Width::Full);
         assert_eq!(settings.width.ascii_symbol, Width::Full);
         assert_eq!(settings.width.digit, Width::Half);

@@ -129,10 +129,20 @@ fn last_aux_text(result: &EngineResult) -> Option<String> {
     })
 }
 
-/// Engine whose Space setting is the full-width one (the default is half).
+/// Engine whose Space setting is the full-width one (the shipped default).
 fn fullwidth_space_engine() -> InputMethodEngine {
     InputMethodEngine::with_config(EngineConfig {
         space: crate::config::settings::SpaceStyle::Full,
+        ..EngineConfig::default()
+    })
+}
+
+/// Engine whose Space setting is the half-width one — the pre-swap layout,
+/// where bare Space passes through from Empty and Shift+Space is the
+/// full-width escape hatch.
+fn halfwidth_space_engine() -> InputMethodEngine {
+    InputMethodEngine::with_config(EngineConfig {
+        space: crate::config::settings::SpaceStyle::Half,
         ..EngineConfig::default()
     })
 }
